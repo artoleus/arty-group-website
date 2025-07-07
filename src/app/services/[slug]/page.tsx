@@ -32,15 +32,25 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
     title: `${service.title} | ${businessInfo.name} - Sittingbourne`,
     description: service.description,
     keywords: service.keywords,
+    alternates: {
+      canonical: `/services/${service.id}`,
+    },
     openGraph: {
       title: `${service.title} | ${businessInfo.name}`,
       description: service.description,
+      url: `https://www.artygroup.co.uk/services/${service.id}`,
       images: service.image ? [
         {
           url: service.image,
           alt: service.title
         }
       ] : []
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${service.title} | ${businessInfo.name}`,
+      description: service.description,
+      images: service.image ? [service.image] : []
     }
   }
 }
@@ -156,6 +166,56 @@ export default async function ServicePage({ params }: ServicePageProps) {
           </div>
         </div>
       </section>
+
+      {/* Structured Data for Service */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Service",
+            "name": service.title,
+            "description": service.description,
+            "provider": {
+              "@type": "LocalBusiness",
+              "name": businessInfo.name,
+              "telephone": businessInfo.phone,
+              "email": businessInfo.email,
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": businessInfo.address.street,
+                "addressLocality": businessInfo.address.city,
+                "postalCode": businessInfo.address.postcode,
+                "addressRegion": businessInfo.address.county,
+                "addressCountry": "GB"
+              }
+            },
+            "areaServed": businessInfo.serviceAreas.map(area => ({
+              "@type": "City",
+              "name": area
+            })),
+            "hasOfferCatalog": {
+              "@type": "OfferCatalog",
+              "name": service.title,
+              "itemListElement": service.features.map((feature, index) => ({
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "Service",
+                  "name": feature
+                }
+              }))
+            },
+            "offers": service.pricing ? {
+              "@type": "Offer",
+              "priceCurrency": "GBP",
+              "price": service.pricing.from.replace(/[£,]/g, ''),
+              "description": service.pricing.description
+            } : undefined,
+            "image": service.image,
+            "url": `https://www.artygroup.co.uk/services/${service.id}`
+          })
+        }}
+      />
     </div>
   )
 }
